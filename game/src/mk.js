@@ -57,7 +57,6 @@
     var game = this.game;
 
     game.fighters.forEach(function (f) {
-      console.log("reset", f);
       f.reset();
     });
 
@@ -87,12 +86,15 @@
         i === 0
           ? mk.fighters.orientations.LEFT
           : mk.fighters.orientations.RIGHT;
+
+      var hasBrain = i === 1;
       this.fighters.push(
         new mk.fighters.Fighter({
           name: current.name,
           arena: this.arena,
           orientation: orientation,
           game: this,
+          hasBrain,
         })
       );
     }
@@ -1466,6 +1468,8 @@
       x: 50,
       y: mk.config.PLAYER_TOP,
     };
+    console.log("initialize fighter", options);
+    this.learner = new QLearner(0.1, 0.9);
     this.init();
   };
 
@@ -1732,8 +1736,6 @@
   };
 
   mk.fighters.Fighter.prototype.reset = function () {
-    console.log(this);
-
     this.setLife(100);
     this.unlock();
     this.setMove(mk.moves.types.STAND);
