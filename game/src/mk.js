@@ -51,6 +51,30 @@
     this.game = null;
   };
 
+  mk.restart = function () {
+    // Reset Player Position and Give Them Full Health
+
+    var game = this.game;
+
+    game.fighters.forEach(function (f) {
+      console.log("reset", f);
+      f.reset();
+    });
+
+    if (game.fighters[0]) {
+      game.fighters[0].setPosition({
+        x: 50,
+        y: mk.config.PLAYER_TOP,
+      });
+    }
+    if (game.fighters[1]) {
+      game.fighters[1].setPosition({
+        x: 470,
+        y: mk.config.PLAYER_TOP,
+      });
+    }
+  };
+
   mk.controllers.Base.prototype._initializeFighters = function (fighters) {
     var current;
 
@@ -217,29 +241,30 @@
     this._addHandlers();
   };
 
-  mk.controllers.Basic.prototype._addHandlers = function () {
-    var pressed = {},
-      self = this,
-      f = this.fighters[this._player];
-    document.addEventListener(
-      "keydown",
-      function (e) {
-        pressed[e.keyCode] = true;
-        var move = self._getMove(pressed, mk.controllers.keys, self._player);
-        self._moveFighter(f, move);
-      },
-      false
-    );
-    document.addEventListener(
-      "keyup",
-      function (e) {
-        delete pressed[e.keyCode];
-        var move = self._getMove(pressed, mk.controllers.keys, self._player);
-        self._moveFighter(f, move);
-      },
-      false
-    );
-  };
+  // mk.controllers.Basic.prototype._addHandlers = function () {
+  //   var pressed = {},
+  //     self = this,
+  //     f = this.fighters[this._player];
+  //   document.addEventListener(
+  //     "keydown",
+  //     function (e) {
+  //       pressed[e.keyCode] = true;
+  //       var move = self._getMove(pressed, mk.controllers.keys, self._player);
+
+  //       self._moveFighter(f, move);
+  //     },
+  //     false
+  //   );
+  //   document.addEventListener(
+  //     "keyup",
+  //     function (e) {
+  //       delete pressed[e.keyCode];
+  //       var move = self._getMove(pressed, mk.controllers.keys, self._player);
+  //       self._moveFighter(f, move);
+  //     },
+  //     false
+  //   );
+  // };
 
   mk.controllers.Basic.prototype._moveFighter = function (f, m) {
     if (m) {
@@ -1436,6 +1461,7 @@
     this._width = 30;
     this._height = 60;
     this._locked = false;
+    this.opts = options;
     this._position = {
       x: 50,
       y: mk.config.PLAYER_TOP,
@@ -1601,6 +1627,13 @@
     }).x;
   };
 
+  mk.fighters.Fighter.prototype.setPosition = function ({ x, y }) {
+    this._position = {
+      x,
+      y,
+    };
+  };
+
   mk.fighters.Fighter.prototype.setY = function (y) {
     this._position.y = y;
   };
@@ -1638,7 +1671,7 @@
     if (this.getLife() === 0) {
       this._game.fighterDead(this);
       this.unlock();
-      this.setMove(mk.moves.types.FALL);
+      // this.setMove(mk.moves.types.FALL);
     }
     return this.getLife();
   };
@@ -1692,6 +1725,18 @@
 
   mk.fighters.Fighter.prototype.getMove = function () {
     return this._currentMove;
+  };
+
+  mk.fighters.Fighter.prototype.setMoveNow = function (move) {
+    this._currentMove = this.moves[move];
+  };
+
+  mk.fighters.Fighter.prototype.reset = function () {
+    console.log(this);
+
+    this.setLife(100);
+    this.unlock();
+    this.setMove(mk.moves.types.STAND);
   };
 
   window.mk = mk;

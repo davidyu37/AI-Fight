@@ -69,6 +69,10 @@
                   setLife($("player1Life"), o.getLife());
                 }
               },
+              "game-end": function () {
+                console.log("game ended");
+                mk.restart();
+              },
             },
             // isHost: /^yes$/i.test(prompt("Are you going to be host?")),
             // gameName: prompt("Enter game name:"),
