@@ -1,30 +1,30 @@
-;(function () {
-
+(function () {
   var mk = {};
 
   mk.callbacks = {
-    ATTACK  : 'attack',
-    GAME_END: 'game-end'
+    ATTACK: "attack",
+    GAME_END: "game-end",
   };
 
   mk.config = {
-    IMAGES       : 'images/',
-    ARENAS       : 'arenas/',
-    FIGHTERS     : 'fighters/',
+    IMAGES: "images/",
+    ARENAS: "arenas/",
+    FIGHTERS: "fighters/",
     STEP_DURATION: 80,
-    PLAYER_TOP   : 230,
-    BLOCK_DAMAGE : 0.2
+    PLAYER_TOP: 230,
+    BLOCK_DAMAGE: 0.2,
   };
 
   mk.controllers = {};
 
   mk.controllers.Base = function (options) {
-    if (!options)
-      return;
+    if (!options) return;
 
     this._callbacks = options.callbacks || {};
 
     this._initializeFighters(options.fighters);
+
+    console.log("Base fighters", this.fighters);
 
     var a = options.arena;
     this.arena = new mk.arenas.Arena({
@@ -33,14 +33,13 @@
       width: a.width,
       height: a.height,
       container: a.container,
-      game: this
+      game: this,
     });
   };
 
   mk.reset = function () {
     var game = this.game;
-    if (typeof game.reset === 'function')
-        game.reset();
+    if (typeof game.reset === "function") game.reset();
     game.fighters.forEach(function (f) {
       f.getMove().stop();
     });
@@ -60,15 +59,18 @@
 
     for (var i = 0; i < fighters.length; i += 1) {
       current = fighters[i];
-      var orientation = (i === 0) ?
-                mk.fighters.orientations.LEFT :
-                mk.fighters.orientations.RIGHT;
-      this.fighters.push(new mk.fighters.Fighter({
-        name: current.name,
-        arena: this.arena,
-        orientation: orientation,
-        game: this
-      }));
+      var orientation =
+        i === 0
+          ? mk.fighters.orientations.LEFT
+          : mk.fighters.orientations.RIGHT;
+      this.fighters.push(
+        new mk.fighters.Fighter({
+          name: current.name,
+          arena: this.arena,
+          orientation: orientation,
+          game: this,
+        })
+      );
     }
     this._opponents[this.fighters[0].getName()] = this.fighters[1];
     this._opponents[this.fighters[1].getName()] = this.fighters[0];
@@ -96,12 +98,12 @@
             promise._initialized();
           }
         });
-      }(f));
+      })(f);
     }
   };
 
   mk.controllers.Base.prototype._initialize = function () {
-    throw '_initialize is not implemented for this controller!';
+    throw "_initialize is not implemented for this controller!";
   };
 
   mk.controllers.Base.prototype._setFighersArena = function () {
@@ -110,23 +112,33 @@
       f = this.fighters[i];
       f.setArena(this.arena);
     }
-    f.setX(470);  //testing
+    f.setX(470); //testing
   };
 
   mk.controllers.Base.prototype.fighterAttacked = function (fighter, damage) {
     var opponent = this.getOpponent(fighter),
       opponentLife = opponent.getLife(),
       callback = this._callbacks[mk.callbacks.ATTACK];
-    if (this._requiredDistance(fighter, opponent) &&
-      this._attackCompatible(fighter.getMove().type, opponent.getMove().type)) {
+    if (
+      this._requiredDistance(fighter, opponent) &&
+      this._attackCompatible(fighter.getMove().type, opponent.getMove().type)
+    ) {
       opponent.endureAttack(damage, fighter.getMove().type);
-      if (typeof callback === 'function') {
-        callback.call(null, fighter, opponent, opponentLife - opponent.getLife());
+      if (typeof callback === "function") {
+        callback.call(
+          null,
+          fighter,
+          opponent,
+          opponentLife - opponent.getLife()
+        );
       }
     }
   };
 
-  mk.controllers.Base.prototype._attackCompatible = function (attack, opponentStand) {
+  mk.controllers.Base.prototype._attackCompatible = function (
+    attack,
+    opponentStand
+  ) {
     var m = mk.moves.types;
     if (opponentStand === m.SQUAT) {
       if (attack !== m.LOW_PUNCH && attack !== m.LOW_KICK) {
@@ -144,7 +156,10 @@
    * @param {Fighter} opponent The fighter who will endure the attack
    * @return {boolean} true/false depending on the distance between the fighters
    */
-  mk.controllers.Base.prototype._requiredDistance = function (attacker, opponent) {
+  mk.controllers.Base.prototype._requiredDistance = function (
+    attacker,
+    opponent
+  ) {
     var fMiddle = attacker.getX() + attacker.getWidth() / 2,
       oMiddle = opponent.getX() + opponent.getWidth() / 2,
       distance = Math.abs(fMiddle - oMiddle),
@@ -154,15 +169,16 @@
     if (distance <= width) {
       return true;
     }
-    if (type === m.UPPERCUT &&
-      distance <= width * 1.2) {
+    if (type === m.UPPERCUT && distance <= width * 1.2) {
       return true;
     }
-    if ((type === m.BACKWARD_JUMP_KICK ||
-      type === m.FORWARD_JUMP_KICK ||
-      type === m.FORWARD_JUMP_PUNCH ||
-      type === m.BACKWARD_JUMP_PUNCH) &&
-      distance <= width * 1.5) {
+    if (
+      (type === m.BACKWARD_JUMP_KICK ||
+        type === m.FORWARD_JUMP_KICK ||
+        type === m.FORWARD_JUMP_PUNCH ||
+        type === m.BACKWARD_JUMP_PUNCH) &&
+      distance <= width * 1.5
+    ) {
       return true;
     }
     return false;
@@ -173,21 +189,21 @@
       callback = this._callbacks[mk.callbacks.GAME_END];
     opponent.getMove().stop();
     opponent.setMove(mk.moves.types.WIN);
-    if (typeof callback === 'function') {
+    if (typeof callback === "function") {
       callback.call(null, fighter);
     }
   };
 
   mk.controllers.keys = {
     RIGHT: 39,
-    LEFT : 37,
-    UP   : 38,
-    DOWN : 40,
+    LEFT: 37,
+    UP: 38,
+    DOWN: 40,
     BLOCK: 16,
-    HP   : 65,
-    LP   : 83,
-    LK   : 68,
-    HK   : 70
+    HP: 65,
+    LP: 83,
+    LK: 68,
+    HK: 70,
   };
 
   mk.controllers.Basic = function (options) {
@@ -205,16 +221,24 @@
     var pressed = {},
       self = this,
       f = this.fighters[this._player];
-    document.addEventListener('keydown', function (e) {
-      pressed[e.keyCode] = true;
-      var move = self._getMove(pressed, mk.controllers.keys, self._player);
-      self._moveFighter(f, move);
-    }, false);
-    document.addEventListener('keyup', function (e) {
-      delete pressed[e.keyCode];
-      var move = self._getMove(pressed, mk.controllers.keys, self._player);
-      self._moveFighter(f, move);
-    }, false);
+    document.addEventListener(
+      "keydown",
+      function (e) {
+        pressed[e.keyCode] = true;
+        var move = self._getMove(pressed, mk.controllers.keys, self._player);
+        self._moveFighter(f, move);
+      },
+      false
+    );
+    document.addEventListener(
+      "keyup",
+      function (e) {
+        delete pressed[e.keyCode];
+        var move = self._getMove(pressed, mk.controllers.keys, self._player);
+        self._moveFighter(f, move);
+      },
+      false
+    );
   };
 
   mk.controllers.Basic.prototype._moveFighter = function (f, m) {
@@ -300,97 +324,28 @@
     }
   };
 
-  mk.controllers.WebcamInput = function (options) {
-    mk.controllers.Basic.call(this, options);
-  };
-
-  mk.controllers.WebcamInput.prototype = new mk.controllers.Basic();
-
-  mk.controllers.WebcamInput.prototype._initialize = function () {
-    this._player = 1;
-    this._addHandlers();
-    this._addMovementHandlers();
-  };
-
-  mk.controllers.WebcamInput.prototype._addMovementHandlers = function () {
-    if (Movement === undefined) {
-      throw 'The WebcamInput requires movement.js';
-    }
-    var self = this,
-      f = this.fighters[0];
-    Movement.init({
-      movementChanged: function (m) {
-        var move = self._getMoveByMovement(m);
-        self._moveFighter(f, move);
-      },
-      positionChanged: function (p) {
-        var move = self._getMoveByMovement(p);
-        self._moveFighter(f, move);
-      }
-    });
-  };
-
-  mk.controllers.WebcamInput.prototype._moveFighter = function (f, m) {
-    if (m) {
-      if (f.getMove().type === mk.moves.types.SQUAT &&
-        m === mk.moves.types.STAND) {
-        f.setMove(mk.moves.types.STAND_UP);
-      } else {
-        f.setMove(m);
-      }
-    }
-  };
-
-  mk.controllers.WebcamInput.prototype._getMoveByMovement = function (move) {
-    var mkMoves = mk.moves.types,
-      pos = Movement.positions,
-      m = Movement.movements,
-      current = this.fighters[this._player].getMove().type;
-    if (move === pos.LEFT) {
-      return mkMoves.WALK_BACKWARD;
-    } else if (move === pos.RIGHT) {
-      return mkMoves.WALK;
-    } else if (move === pos.MIDDLE) {
-      return mkMoves.STAND;
-    } else if (move === m.STAND) {
-      return mkMoves.STAND;
-    } else if (move === m.SQUAT) {
-      return mkMoves.SQUAT;
-    } else if (move === m.LEFT_ARM_UP ||
-           move === m.RIGHT_ARM_UP) {
-      return mkMoves.HIGH_PUNCH;
-    } else if (move === m.LEFT_LEG_UP ||
-           move === m.RIGHT_LEG_UP) {
-      return mkMoves.LOW_KICK;
-    } else if (move === m.SQUAT_LEFT_ARM_UP ||
-           move === m.SQUAT_RIGHT_ARM_UP) {
-      return mkMoves.SQUAT_LOW_PUNCH;
-    }
-    return mkMoves.STAND;
-  };
-
   mk.controllers.keys.p1 = {
     RIGHT: 74,
-    LEFT : 71,
-    UP   : 89,
-    DOWN : 72,
+    LEFT: 71,
+    UP: 89,
+    DOWN: 72,
     BLOCK: 16,
-    HP   : 65,
-    LP   : 83,
-    LK   : 68,
-    HK   : 70
+    HP: 65,
+    LP: 83,
+    LK: 68,
+    HK: 70,
   };
 
   mk.controllers.keys.p2 = {
     RIGHT: 39,
-    LEFT : 37,
-    UP   : 38,
-    DOWN : 40,
+    LEFT: 37,
+    UP: 38,
+    DOWN: 40,
     BLOCK: 17,
-    HP   : 80,
-    LP   : 219,
-    LK   : 221,
-    HK   : 220
+    HP: 80,
+    LP: 219,
+    LK: 221,
+    HK: 220,
   };
 
   mk.controllers.Multiplayer = function (options) {
@@ -409,21 +364,29 @@
       f1 = this.fighters[0],
       f2 = this.fighters[1];
 
-    document.addEventListener('keydown', function (e) {
-      pressed[e.keyCode] = true;
-      var move = self._getMove(pressed, mk.controllers.keys.p1, 0);
-      self._moveFighter(f1, move);
-      move = self._getMove(pressed, mk.controllers.keys.p2, 1);
-      self._moveFighter(f2, move);
-    }, false);
+    document.addEventListener(
+      "keydown",
+      function (e) {
+        pressed[e.keyCode] = true;
+        var move = self._getMove(pressed, mk.controllers.keys.p1, 0);
+        self._moveFighter(f1, move);
+        move = self._getMove(pressed, mk.controllers.keys.p2, 1);
+        self._moveFighter(f2, move);
+      },
+      false
+    );
 
-    document.addEventListener('keyup', function (e) {
-      delete pressed[e.keyCode];
-      var move = self._getMove(pressed, mk.controllers.keys.p1, 0);
-      self._moveFighter(f1, move);
-      move = self._getMove(pressed, mk.controllers.keys.p2, 1);
-      self._moveFighter(f2, move);
-    }, false);
+    document.addEventListener(
+      "keyup",
+      function (e) {
+        delete pressed[e.keyCode];
+        var move = self._getMove(pressed, mk.controllers.keys.p1, 0);
+        self._moveFighter(f1, move);
+        move = self._getMove(pressed, mk.controllers.keys.p2, 1);
+        self._moveFighter(f2, move);
+      },
+      false
+    );
   };
 
   mk.controllers.Multiplayer.prototype._moveFighter = function (fighter, move) {
@@ -432,147 +395,22 @@
     }
   };
 
-  mk.controllers.Network = function (options) {
-    mk.controllers.Basic.call(this, options);
-    this._isHost = options.isHost;
-    this._gameName = options.gameName;
-    this._transport = options.transport || this.Transports.socketio;
-  };
-
-  mk.callbacks.PLAYER_CONNECTED = 'player-connected';
-
-  mk.controllers.Network.prototype = new mk.controllers.Basic();
-
-  mk.controllers.Network.prototype.Requests = {
-    CREATE_GAME: 'create-game',
-    JOIN_GAME  : 'join-game'
-  };
-
-  mk.controllers.Network.prototype.Responses = {
-    SUCCESS        : 0,
-    GAME_EXISTS    : 1,
-    GAME_NOT_EXISTS: 2,
-    GAME_FULL      : 3
-  };
-
-  mk.controllers.Network.prototype.Messages = {
-    EVENT           : 'event',
-    LIFE_UPDATE     : 'life-update',
-    POSITION_UPDATE : 'position-update',
-    PLAYER_CONNECTED: 'player-connected'
-  };
-
-  mk.controllers.Network.prototype.Transports = {
-    socketio: {}
-  };
-
-  mk.controllers.Network.prototype.Transports.socketio.init = function() {
-    this._socket = io.connect();
-  };
-
-  mk.controllers.Network.prototype.Transports.socketio.emit = function() {
-    this._socket.emit.apply(this._socket, arguments);
-  };
-
-  mk.controllers.Network.prototype.Transports.socketio.on = function() {
-    this._socket.on.apply(this._socket, arguments);
-  };
-
-  mk.controllers.Network.prototype._createGame = function (game) {
-    this._transport.emit(this.Requests.CREATE_GAME, this._gameName);
-    this._addSocketHandlers();
-  };
-
-  mk.controllers.Network.prototype._addSocketHandlers = function () {
-    var opponent = this.fighters[+!this._player],
-      f = this.fighters[this._player],
-      m = this.Messages,
-      self = this;
-    this._transport.on(m.EVENT, function (move) {
-      opponent.setMove(move);
-    });
-    this._transport.on(m.LIFE_UPDATE, function (data) {
-      opponent.setLife(data);
-    });
-    this._transport.on(m.POSITION_UPDATE, function (data) {
-      opponent.setX(data.x);
-      opponent.setY(data.y);
-    });
-    setInterval(function () {
-      self._transport.emit(m.LIFE_UPDATE, f.getLife());
-    }, 2000);
-    setInterval(function () {
-      if (!f.isJumping()) {
-        self._transport.emit(m.POSITION_UPDATE, {
-          x: f.getX(),
-          y: f.getY()
-        });
-      }
-    }, 500);
-    if (this._isHost) {
-      this._transport.on(this.Messages.PLAYER_CONNECTED, function (data) {
-        var c = self._callbacks[mk.callbacks.PLAYER_CONNECTED];
-        if (typeof c  === 'function') {
-          c();
-        }
-      });
-    }
-  };
-
-  mk.controllers.Network.prototype._moveFighter = function (f, m) {
-    if (m) {
-      this._transport.emit('event', m);
-      f.setMove(m);
-    }
-  };
-
-  mk.controllers.Network.prototype._joinGame = function (game) {
-    this._transport.emit(this.Requests.JOIN_GAME, this._gameName);
-    this._addSocketHandlers();
-  };
-
-  mk.controllers.Network.prototype._initialize = function () {
-    var self = this;
-    if (this._isHost) {
-      this._player = 1;
-    } else {
-      this._player = 0;
-    }
-    this._addHandlers();
-    this._transport.init();
-    this._transport.on('connect', function () {
-      if (self._isHost) {
-        self._createGame(self._gameName);
-      } else {
-        self._joinGame(self._gameName);
-      }
-    });
-    this._transport.on('response', function (response) {
-      if (response !== self.Responses.SUCCESS) {
-        alert('Error while connecting to the server.');
-      }
-    });
-    this._transport.on('disconnect', function () {
-      alert('Disconnected from the server.');
-    });
-  };
-
   mk.start = function (options) {
-    var type = options.gameType || 'basic',
+    var type = options.gameType || "basic",
       promise = new mk.Promise();
     type = type.toLowerCase();
     switch (type) {
-      case 'basic':
+      case "basic":
         mk.game = new mk.controllers.Basic(options);
         break;
-      case 'network':
-        mk.game = new mk.controllers.Network(options);
-        break;
-      case 'multiplayer':
+      // case "network":
+      //   mk.game = new mk.controllers.Network(options);
+      //   break;
+      case "multiplayer":
         mk.game = new mk.controllers.Multiplayer(options);
-        break;
-      case 'webcaminput':
-        mk.game = new mk.controllers.WebcamInput(options);
+        // break;
+        // case "webcaminput":
+        //   mk.game = new mk.controllers.WebcamInput(options);
         break;
       default:
         mk.game = new mk.controllers.Basic(options);
@@ -587,7 +425,7 @@
 
   mk.Promise.prototype._initialized = function () {
     this.callbacks.forEach(function (c) {
-      if (typeof c === 'function') {
+      if (typeof c === "function") {
         c();
       }
     });
@@ -597,12 +435,11 @@
     this.callbacks.push(callback);
   };
 
-
   mk.arenas = {
     types: {
-      TOWER      : 0,
-      THRONE_ROOM: 1
-    }
+      TOWER: 0,
+      THRONE_ROOM: 1,
+    },
   };
 
   mk.arenas.Arena = function (options) {
@@ -615,11 +452,11 @@
   };
 
   mk.arenas.Arena.prototype.init = function () {
-    var canvas = document.createElement('canvas');
+    var canvas = document.createElement("canvas");
     canvas.width = this.width;
     canvas.height = this.height;
     this._container.appendChild(canvas);
-    this._context = canvas.getContext('2d');
+    this._context = canvas.getContext("2d");
     this._canvas = canvas;
     this.refresh();
   };
@@ -635,13 +472,13 @@
   };
 
   mk.arenas.Arena.prototype._drawArena = function () {
-    var img = document.createElement('img'),
+    var img = document.createElement("img"),
       conf = mk.config,
       self = this;
     if (this.texture) {
       this._context.drawImage(this.texture, 0, 0, this.width, this.height);
     } else {
-      img.src = conf.IMAGES + conf.ARENAS + this.arena + '/arena.png';
+      img.src = conf.IMAGES + conf.ARENAS + this.arena + "/arena.png";
       img.width = this.width;
       img.height = this.height;
       img.onload = function () {
@@ -688,18 +525,27 @@
     return pos;
   };
 
-  mk.arenas.Arena.prototype._synchronizeFighters = function (pos, fighter, opponent) {
-    if (fighter.getMove().type === mk.moves.types.FORWARD_JUMP ||
-      fighter.getMove().type === mk.moves.types.BACKWARD_JUMP) {
+  mk.arenas.Arena.prototype._synchronizeFighters = function (
+    pos,
+    fighter,
+    opponent
+  ) {
+    if (
+      fighter.getMove().type === mk.moves.types.FORWARD_JUMP ||
+      fighter.getMove().type === mk.moves.types.BACKWARD_JUMP
+    ) {
       pos.x = fighter.getX();
       return pos;
     }
     var diff;
     if (fighter.getOrientation() === mk.fighters.orientations.LEFT) {
-      diff = Math.min(this.width -
-              (opponent.getX() + opponent.getVisibleWidth() +
-              fighter.getVisibleWidth()),
-              pos.x - fighter.getX());
+      diff = Math.min(
+        this.width -
+          (opponent.getX() +
+            opponent.getVisibleWidth() +
+            fighter.getVisibleWidth()),
+        pos.x - fighter.getX()
+      );
 
       pos.x = fighter.getX() + diff;
       if (diff > 0) {
@@ -733,40 +579,39 @@
     }
   };
 
-
-/* * * * * * * * * * * * * * * * Definition of all movements * * * * * * * * * * * * * * * */
+  /* * * * * * * * * * * * * * * * Definition of all movements * * * * * * * * * * * * * * * */
 
   mk.moves = {};
 
   mk.moves.types = {
-    STAND              : 'stand',
-    WALK               : 'walking',
-    WALK_BACKWARD      : 'walking-backward',
-    SQUAT              : 'squating',
-    STAND_UP           : 'stand-up',
-    HIGH_KICK          : 'high-kick',
-    JUMP               : 'jumping',
-    FORWARD_JUMP       : 'forward-jump',
-    BACKWARD_JUMP      : 'backward-jump',
-    LOW_KICK           : 'low-kick',
-    LOW_PUNCH          : 'low-punch',
-    HIGH_PUNCH         : 'high-punch',
-    FALL               : 'fall',
-    WIN                : 'win',
-    ENDURE             : 'endure',
-    SQUAT_ENDURE       : 'squat-endure',
-    UPPERCUT           : 'uppercut',
-    SQUAT_LOW_KICK     : 'squat-low-kick',
-    SQUAT_HIGH_KICK    : 'squat-high-kick',
-    SQUAT_LOW_PUNCH    : 'squat-low-punch',
-    KNOCK_DOWN         : 'knock-down',
-    ATTRACTIVE_STAND_UP: 'attractive-stand-up',
-    SPIN_KICK          : 'spin-kick',
-    BLOCK              : 'blocking',
-    FORWARD_JUMP_KICK  : 'forward-jump-kick',
-    BACKWARD_JUMP_KICK : 'backward-jump-kick',
-    BACKWARD_JUMP_PUNCH: 'backward-jump-punch',
-    FORWARD_JUMP_PUNCH : 'forward-jump-punch'
+    STAND: "stand",
+    WALK: "walking",
+    WALK_BACKWARD: "walking-backward",
+    SQUAT: "squating",
+    STAND_UP: "stand-up",
+    HIGH_KICK: "high-kick",
+    JUMP: "jumping",
+    FORWARD_JUMP: "forward-jump",
+    BACKWARD_JUMP: "backward-jump",
+    LOW_KICK: "low-kick",
+    LOW_PUNCH: "low-punch",
+    HIGH_PUNCH: "high-punch",
+    FALL: "fall",
+    WIN: "win",
+    ENDURE: "endure",
+    SQUAT_ENDURE: "squat-endure",
+    UPPERCUT: "uppercut",
+    SQUAT_LOW_KICK: "squat-low-kick",
+    SQUAT_HIGH_KICK: "squat-high-kick",
+    SQUAT_LOW_PUNCH: "squat-low-punch",
+    KNOCK_DOWN: "knock-down",
+    ATTRACTIVE_STAND_UP: "attractive-stand-up",
+    SPIN_KICK: "spin-kick",
+    BLOCK: "blocking",
+    FORWARD_JUMP_KICK: "forward-jump-kick",
+    BACKWARD_JUMP_KICK: "backward-jump-kick",
+    BACKWARD_JUMP_PUNCH: "backward-jump-punch",
+    FORWARD_JUMP_PUNCH: "forward-jump-punch",
   };
 
   /**
@@ -788,8 +633,7 @@
 
   mk.moves.Move.prototype.go = function (step) {
     var self = this;
-    if (typeof this._beforeGo === 'function')
-      this._beforeGo();
+    if (typeof this._beforeGo === "function") this._beforeGo();
     this._currentStep = step || 0;
     this._nextStep(this._action);
     this._interval = setInterval(function () {
@@ -800,7 +644,7 @@
   mk.moves.Move.prototype._action = function () {};
 
   mk.moves.Move.prototype._nextStep = function (callback) {
-    var img = document.createElement('img'),
+    var img = document.createElement("img"),
       conf = mk.config;
 
     img = this._steps[this.owner.getOrientation()][this._currentStep];
@@ -813,13 +657,14 @@
   mk.moves.Move.prototype.init = function (callback) {
     var loaded = 0,
       self = this,
-      img, o = mk.fighters.orientations;
+      img,
+      o = mk.fighters.orientations;
     this._steps = {};
     this._steps[o.RIGHT] = [];
     this._steps[o.LEFT] = [];
     for (var i = 0; i < this._totalSteps; i += 1) {
       for (var orientation in o) {
-        img = document.createElement('img');
+        img = document.createElement("img");
         img.onload = function () {
           loaded += 1;
           if (loaded === self._totalSteps * 2) {
@@ -830,29 +675,33 @@
         this._steps[o[orientation]].push(img);
       }
     }
-    if (typeof this.addHandlers === 'function') {
+    if (typeof this.addHandlers === "function") {
       this.addHandlers();
     }
   };
 
   mk.moves.Move.prototype._getImageUrl = function (id, ownerOrientation) {
     var conf = mk.config;
-    return conf.IMAGES +
-         conf.FIGHTERS +
-         this.owner.getName() + '/' +
-         ownerOrientation + '/' +
-         this.type + '/' +
-         id + '.png';
+    return (
+      conf.IMAGES +
+      conf.FIGHTERS +
+      this.owner.getName() +
+      "/" +
+      ownerOrientation +
+      "/" +
+      this.type +
+      "/" +
+      id +
+      ".png"
+    );
   };
 
   mk.moves.Move.prototype.stop = function (callback) {
-
-    if (typeof this._beforeStop === 'function')
-      this._beforeStop();
+    if (typeof this._beforeStop === "function") this._beforeStop();
 
     clearInterval(this._interval);
 
-    if (typeof this._actionPending === 'function') {
+    if (typeof this._actionPending === "function") {
       var func = this._actionPending;
       this._actionPending = null;
       func();
@@ -878,7 +727,7 @@
     mk.moves.CycleMove.call(this, {
       owner: owner,
       type: mk.moves.types.STAND,
-      steps: 9
+      steps: 9,
     });
   };
 
@@ -892,7 +741,7 @@
     mk.moves.CycleMove.call(this, {
       owner: owner,
       type: mk.moves.types.WALK,
-      steps: 9
+      steps: 9,
     });
   };
 
@@ -907,7 +756,7 @@
     mk.moves.CycleMove.call(this, {
       owner: owner,
       type: mk.moves.types.WALK_BACKWARD,
-      steps: 9
+      steps: 9,
     });
   };
 
@@ -1025,7 +874,12 @@
   };
 
   mk.moves.AttractiveStandUp = function (owner) {
-    mk.moves.FiniteMove.call(this, owner, mk.moves.types.ATTRACTIVE_STAND_UP, 100);
+    mk.moves.FiniteMove.call(
+      this,
+      owner,
+      mk.moves.types.ATTRACTIVE_STAND_UP,
+      100
+    );
     this._totalSteps = 4;
   };
 
@@ -1126,8 +980,7 @@
 
   mk.moves.SquatEndure.prototype._beforeGo = function () {
     this.owner.lock();
-    if (this._bottom === undefined)
-      this._bottom = this.owner.getBottom();
+    if (this._bottom === undefined) this._bottom = this.owner.getBottom();
   };
 
   mk.moves.SquatEndure.prototype._beforeStop = function () {
@@ -1147,7 +1000,6 @@
       this.owner.setY(this.owner.getY() - (this._bottom - currentBottom));
     }
   };
-
 
   mk.moves.Jump = function (owner) {
     mk.moves.Move.call(this, owner, mk.moves.types.JUMP, 60);
@@ -1226,10 +1078,12 @@
   };
 
   mk.moves.ForwardJump.prototype._action = function () {
-    if (this._currentStep > (this._totalSteps - 1) / 2) { //Move down
+    if (this._currentStep > (this._totalSteps - 1) / 2) {
+      //Move down
       this.owner.setY(this.owner.getY() + 26);
       this.owner.setX(this.owner.getX() + 23);
-    } else { //Move up
+    } else {
+      //Move up
       this.owner.setY(this.owner.getY() - 26);
       this.owner.setX(this.owner.getX() + 23);
     }
@@ -1262,23 +1116,27 @@
   };
 
   mk.moves.BackwardJump.prototype._action = function () {
-    if (this._currentStep > (this._totalSteps - 1) / 2) { //Move down
+    if (this._currentStep > (this._totalSteps - 1) / 2) {
+      //Move down
       this.owner.setY(this.owner.getY() + 26);
       this.owner.setX(this.owner.getX() - 23);
-    } else { //Move up
+    } else {
+      //Move up
       this.owner.setY(this.owner.getY() - 26);
       this.owner.setX(this.owner.getX() - 23);
     }
   };
 
-/* * * * * * * * * * * * * * Standard attacks * * * * * * * * * * * * * * * */
+  /* * * * * * * * * * * * * * Standard attacks * * * * * * * * * * * * * * * */
 
   mk.moves.Attack = function (options) {
     options = options || {};
-    mk.moves.Move.call(this,
+    mk.moves.Move.call(
+      this,
       options.owner,
       options.type,
-      options.duration || 40);
+      options.duration || 40
+    );
     this._damage = options.damage;
     this._totalSteps = options.steps;
     this._moveBack = false;
@@ -1313,8 +1171,10 @@
 
   mk.moves.Attack.prototype._action = function () {
     this.keepDistance();
-    if (!this._hitPassed &&
-      this._currentStep === Math.round(this._totalSteps / 2)) {
+    if (
+      !this._hitPassed &&
+      this._currentStep === Math.round(this._totalSteps / 2)
+    ) {
       this.owner.attack(this.getDamage());
       this._hitPassed = true;
     }
@@ -1350,19 +1210,18 @@
       owner: owner,
       type: mk.moves.types.HIGH_KICK,
       steps: 7,
-      damage: 10
+      damage: 10,
     });
   };
 
   mk.moves.HighKick.prototype = new mk.moves.Attack();
-
 
   mk.moves.LowKick = function (owner) {
     mk.moves.Attack.call(this, {
       owner: owner,
       type: mk.moves.types.LOW_KICK,
       steps: 6,
-      damage: 6
+      damage: 6,
     });
   };
 
@@ -1373,24 +1232,22 @@
       owner: owner,
       type: mk.moves.types.LOW_PUNCH,
       steps: 5,
-      damage: 5
+      damage: 5,
     });
   };
 
   mk.moves.LowPunch.prototype = new mk.moves.Attack();
-
 
   mk.moves.HighPunch = function (owner) {
     mk.moves.Attack.call(this, {
       owner: owner,
       type: mk.moves.types.HIGH_PUNCH,
       steps: 5,
-      damage: 8
+      damage: 8,
     });
   };
 
   mk.moves.HighPunch.prototype = new mk.moves.Attack();
-
 
   mk.moves.Uppercut = function (owner) {
     mk.moves.Attack.call(this, {
@@ -1398,7 +1255,7 @@
       type: mk.moves.types.UPPERCUT,
       steps: 5,
       damage: 13,
-      duration: 60
+      duration: 60,
     });
   };
 
@@ -1411,8 +1268,10 @@
 
   mk.moves.Uppercut.prototype._action = function () {
     this.keepDistance();
-    if (!this._hitPassed &&
-      this._currentStep === Math.round(this._totalSteps / 2)) {
+    if (
+      !this._hitPassed &&
+      this._currentStep === Math.round(this._totalSteps / 2)
+    ) {
       this.owner.attack(this.getDamage());
       this._hitPassed = true;
     }
@@ -1426,7 +1285,7 @@
       damage: 4,
       duration: 70,
       returnStand: mk.moves.types.SQUAT,
-      returnStandStep: 2
+      returnStandStep: 2,
     });
   };
 
@@ -1440,7 +1299,7 @@
       damage: 6,
       duration: 70,
       returnStand: mk.moves.types.SQUAT,
-      returnStandStep: 2
+      returnStandStep: 2,
     });
   };
 
@@ -1454,7 +1313,7 @@
       damage: 4,
       duration: 70,
       returnStand: mk.moves.types.SQUAT,
-      returnStandStep: 2
+      returnStandStep: 2,
     });
   };
 
@@ -1467,7 +1326,7 @@
       steps: 8,
       damage: 13,
       duration: 60,
-      returnStand: mk.moves.types.STAND
+      returnStand: mk.moves.types.STAND,
     });
     this._dontReturn = true;
   };
@@ -1478,18 +1337,18 @@
     mk.moves.Attack.call(this, {
       owner: owner,
       type: type,
-      steps: 3,   //to be overriden by the fighter
+      steps: 3, //to be overriden by the fighter
       damage: damage,
-      duration: 80
+      duration: 80,
     });
     this._offset = {
       x: -23,
-      y: 26
+      y: 26,
     };
     if (isForward) {
       this._offset = {
         x: 23,
-        y: 26
+        y: 26,
       };
     }
     this._totalPics = 2;
@@ -1514,8 +1373,7 @@
   };
 
   mk.moves.JumpAttack.prototype._action = function () {
-    if (!this._hitPassed &&
-      this._currentStep === this._totalPics) {
+    if (!this._hitPassed && this._currentStep === this._totalPics) {
       this.owner.attack(this.getDamage());
       this._hitPassed = true;
     }
@@ -1549,31 +1407,26 @@
 
   mk.moves.JumpPunch.prototype = new mk.moves.JumpAttack();
 
+  /* * * * * * * * * * * * * * End of the standard attacks * * * * * * * * * * * * * * * */
 
-
-
-/* * * * * * * * * * * * * * End of the standard attacks * * * * * * * * * * * * * * * */
-
-/* * * * * * * * * * * * * End of the movements definition * * * * * * * * * * * * * * */
-
-
+  /* * * * * * * * * * * * * End of the movements definition * * * * * * * * * * * * * * */
 
   mk.fighters = {};
 
   mk.fighters.list = {
-    'subzero': true,
-    'kano': true
+    subzero: true,
+    kano: true,
   };
 
   mk.fighters.orientations = {
-    LEFT: 'left',
-    RIGHT: 'right'
+    LEFT: "left",
+    RIGHT: "right",
   };
 
   mk.fighters.Fighter = function (options) {
     var name = options.name.toLowerCase();
     if (!mk.fighters.list[name]) {
-      throw 'Invalid fighter name!';
+      throw "Invalid fighter name!";
     }
     this._name = name;
     this._arena = options.arena;
@@ -1585,7 +1438,7 @@
     this._locked = false;
     this._position = {
       x: 50,
-      y: mk.config.PLAYER_TOP
+      y: mk.config.PLAYER_TOP,
     };
     this.init();
   };
@@ -1598,7 +1451,9 @@
     this.moves[mk.moves.types.SQUAT] = new mk.moves.Squat(this);
     this.moves[mk.moves.types.BLOCK] = new mk.moves.Block(this);
     this.moves[mk.moves.types.STAND_UP] = new mk.moves.StandUp(this);
-    this.moves[mk.moves.types.ATTRACTIVE_STAND_UP] = new mk.moves.AttractiveStandUp(this);
+    this.moves[
+      mk.moves.types.ATTRACTIVE_STAND_UP
+    ] = new mk.moves.AttractiveStandUp(this);
     this.moves[mk.moves.types.HIGH_KICK] = new mk.moves.HighKick(this);
     this.moves[mk.moves.types.LOW_KICK] = new mk.moves.LowKick(this);
     this.moves[mk.moves.types.SPIN_KICK] = new mk.moves.SpinKick(this);
@@ -1606,16 +1461,32 @@
     this.moves[mk.moves.types.HIGH_PUNCH] = new mk.moves.HighPunch(this);
     this.moves[mk.moves.types.UPPERCUT] = new mk.moves.Uppercut(this);
     this.moves[mk.moves.types.SQUAT_LOW_KICK] = new mk.moves.SquatLowKick(this);
-    this.moves[mk.moves.types.SQUAT_HIGH_KICK] = new mk.moves.SquatHighKick(this);
-    this.moves[mk.moves.types.SQUAT_LOW_PUNCH] = new mk.moves.SquatLowPunch(this);
+    this.moves[mk.moves.types.SQUAT_HIGH_KICK] = new mk.moves.SquatHighKick(
+      this
+    );
+    this.moves[mk.moves.types.SQUAT_LOW_PUNCH] = new mk.moves.SquatLowPunch(
+      this
+    );
     this.moves[mk.moves.types.FALL] = new mk.moves.Fall(this);
     this.moves[mk.moves.types.KNOCK_DOWN] = new mk.moves.KnockDown(this);
     this.moves[mk.moves.types.WIN] = new mk.moves.Win(this);
     this.moves[mk.moves.types.JUMP] = new mk.moves.Jump(this);
-    this.moves[mk.moves.types.FORWARD_JUMP_KICK] = new mk.moves.JumpKick(this, true);
-    this.moves[mk.moves.types.BACKWARD_JUMP_KICK] = new mk.moves.JumpKick(this, false);
-    this.moves[mk.moves.types.FORWARD_JUMP_PUNCH] = new mk.moves.JumpPunch(this, true);
-    this.moves[mk.moves.types.BACKWARD_JUMP_PUNCH] = new mk.moves.JumpPunch(this, false);
+    this.moves[mk.moves.types.FORWARD_JUMP_KICK] = new mk.moves.JumpKick(
+      this,
+      true
+    );
+    this.moves[mk.moves.types.BACKWARD_JUMP_KICK] = new mk.moves.JumpKick(
+      this,
+      false
+    );
+    this.moves[mk.moves.types.FORWARD_JUMP_PUNCH] = new mk.moves.JumpPunch(
+      this,
+      true
+    );
+    this.moves[mk.moves.types.BACKWARD_JUMP_PUNCH] = new mk.moves.JumpPunch(
+      this,
+      false
+    );
     this.moves[mk.moves.types.ENDURE] = new mk.moves.Endure(this);
     this.moves[mk.moves.types.SQUAT_ENDURE] = new mk.moves.SquatEndure(this);
     this.moves[mk.moves.types.FORWARD_JUMP] = new mk.moves.ForwardJump(this);
@@ -1629,7 +1500,7 @@
       this.moves[move].init(function () {
         initialized += 1;
         if (initialized === total) {
-          if (typeof callback === 'function') {
+          if (typeof callback === "function") {
             callback();
           }
         }
@@ -1641,10 +1512,15 @@
     if (!this._currentMove) return false;
     var move = this._currentMove.type,
       m = mk.moves.types;
-    if (move === m.JUMP || move === m.BACKWARD_JUMP ||
-      move === m.FORWARD_JUMP || move === m.FORWARD_JUMP_KICK ||
-      move === m.BACKWARD_JUMP_KICK || move === m.FORWARD_JUMP_PUNCH ||
-      move === m.BACKWARD_JUMP_PUNCH) {
+    if (
+      move === m.JUMP ||
+      move === m.BACKWARD_JUMP ||
+      move === m.FORWARD_JUMP ||
+      move === m.FORWARD_JUMP_KICK ||
+      move === m.BACKWARD_JUMP_KICK ||
+      move === m.FORWARD_JUMP_PUNCH ||
+      move === m.BACKWARD_JUMP_PUNCH
+    ) {
       return true;
     }
     return false;
@@ -1697,7 +1573,7 @@
   };
 
   mk.fighters.Fighter.prototype.refresh = function () {
-    if (this._arena && typeof this._arena.refresh === 'function') {
+    if (this._arena && typeof this._arena.refresh === "function") {
       this._arena.refresh(this);
     }
   };
@@ -1719,7 +1595,10 @@
   };
 
   mk.fighters.Fighter.prototype.setX = function (x) {
-    this._position.x = this._arena.moveFighter(this, { x: x, y: this.getY() }).x;
+    this._position.x = this._arena.moveFighter(this, {
+      x: x,
+      y: this.getY(),
+    }).x;
   };
 
   mk.fighters.Fighter.prototype.setY = function (y) {
@@ -1748,8 +1627,7 @@
       if (this.getMove().type === m.SQUAT) {
         this.setMove(m.SQUAT_ENDURE);
       } else {
-        if (attackType === m.UPPERCUT ||
-          attackType === m.SPIN_KICK) {
+        if (attackType === m.UPPERCUT || attackType === m.SPIN_KICK) {
           this.setMove(m.KNOCK_DOWN);
         } else {
           this.setMove(m.ENDURE);
@@ -1784,25 +1662,28 @@
       currentMove = this._currentMove;
 
     if (!(move in this.moves))
-      throw 'This player does not has the move - ' + move;
+      throw "This player does not has the move - " + move;
 
-    if (this._currentMove && this._currentMove.type === move)
-      return;
+    if (this._currentMove && this._currentMove.type === move) return;
 
-    if (move === m.FORWARD_JUMP_KICK || move === m.BACKWARD_JUMP_KICK ||
-      move === m.FORWARD_JUMP_PUNCH || move === m.BACKWARD_JUMP_PUNCH) {
+    if (
+      move === m.FORWARD_JUMP_KICK ||
+      move === m.BACKWARD_JUMP_KICK ||
+      move === m.FORWARD_JUMP_PUNCH ||
+      move === m.BACKWARD_JUMP_PUNCH
+    ) {
       if (currentMove._currentStep >= currentMove._totalSteps / 2) {
         this._currentMove.stop();
         this.unlock();
         this._currentMove = this.moves[move];
-        this._currentMove._totalSteps = currentMove._totalSteps - currentMove._currentStep;
+        this._currentMove._totalSteps =
+          currentMove._totalSteps - currentMove._currentStep;
       }
     }
 
-    if (this._locked && move !== m.WIN)
-      return;
+    if (this._locked && move !== m.WIN) return;
 
-    if (this._currentMove && typeof this._currentMove.stop === 'function')
+    if (this._currentMove && typeof this._currentMove.stop === "function")
       this._currentMove.stop();
 
     this._currentMove = this.moves[move];
@@ -1814,5 +1695,4 @@
   };
 
   window.mk = mk;
-
-}());
+})();
