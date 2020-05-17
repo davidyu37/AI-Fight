@@ -19,20 +19,27 @@
       margin: 0px;
     "
   >
-    <div id="parent">
-      <div id="utils">
-        <div id="player1Name" class="playerName">Sub-Zero</div>
-        <div id="player1LifeBar" class="lifebar">
-          <div class="life" id="player1Life"></div>
-        </div>
-        <div id="player2Name" class="playerName">Kano</div>
-        <div id="player2LifeBar" class="lifebar">
-          <div class="life" id="player2Life"></div>
-        </div>
+    <div>
+      <div class="record-box">
+        <div>WIN: <span id="player1Win">0</span></div>
+        <div>Round: <span id="round-number">1</span></div>
+        <div>WIN: <span id="player2Win">0</span></div>
       </div>
-      <div id="arena"></div>
-      <div id="loading">
-        <span class="loadingLabel">Loading...</span>
+      <div id="parent">
+        <div id="utils">
+          <div id="player1Name" class="playerName">Sub-Zero</div>
+          <div id="player1LifeBar" class="lifebar">
+            <div class="life" id="player1Life"></div>
+          </div>
+          <div id="player2Name" class="playerName">Kano</div>
+          <div id="player2LifeBar" class="lifebar">
+            <div class="life" id="player2Life"></div>
+          </div>
+        </div>
+        <div id="arena"></div>
+        <div id="loading">
+          <span class="loadingLabel">Loading...</span>
+        </div>
       </div>
     </div>
 
@@ -83,10 +90,16 @@
                 mk.game.fighters.forEach((fighter) => {
                   if (fighter.getName() === "kano") {
                     setLife($("player2Life"), fighter.getLife());
+                    $("player2Win").innerText = fighter._win;
                   } else {
                     setLife($("player1Life"), fighter.getLife());
+                    $("player1Win").innerText = fighter._win;
                   }
                 });
+
+                const round = mk.getRound();
+
+                $("round-number").innerText = round;
               },
             },
             // isHost: /^yes$/i.test(prompt("Are you going to be host?")),

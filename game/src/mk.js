@@ -1,6 +1,8 @@
 (function () {
   var mk = {};
 
+  let GAME_ROUND = 1;
+
   mk.callbacks = {
     ATTACK: "attack",
     GAME_END: "game-end",
@@ -24,8 +26,6 @@
 
     this._initializeFighters(options.fighters);
 
-    console.log("Base fighters", this.fighters);
-
     var a = options.arena;
     this.arena = new mk.arenas.Arena({
       fighters: this.fighters,
@@ -35,6 +35,10 @@
       container: a.container,
       game: this,
     });
+  };
+
+  mk.getRound = function () {
+    return GAME_ROUND;
   };
 
   // mk.reset = function () {
@@ -78,10 +82,6 @@
   mk.step = () => {
     const player1 = mk.game.fighters[0];
     const player2 = mk.game.fighters[1];
-    // console.log(player1.getName(), `has brain ${player1._hasBrain}`);
-    // console.log(player2.getName(), `has brain ${player2._hasBrain}`);
-    // console.log(player2);
-    // console.log(player2);
 
     player1.act({
       opponent: {
@@ -281,6 +281,10 @@
       callback = this._callbacks[mk.callbacks.GAME_END];
     opponent.getMove().stop();
     opponent.setMove(mk.moves.types.WIN);
+
+    fighter.updateWinLoss(opponent, fighter);
+
+    GAME_ROUND++;
 
     if (typeof callback === "function") {
       callback.call(null, fighter);
@@ -1530,6 +1534,8 @@
     this._width = 30;
     this._height = 60;
     this._locked = false;
+    this._win = 0;
+    this._loss = 0;
     this.opts = options;
     this._hasBrain = options.hasBrain;
     this._position = {
@@ -1606,15 +1612,20 @@
     }
   };
 
+  mk.fighters.Fighter.prototype.updateWinLoss = function (winner, loser) {
+    winner._win++;
+    loser._loss++;
+  };
+
   mk.fighters.Fighter.prototype.act = function ({ opponent, game_status }) {
     if (this._hasBrain) {
       // Do Q Learning Stuff
-      console.log("thinker");
       const learner = this.learner;
       // Get Current State of the Game
       const currentState = mk.getGameState(this);
       // Use Current State to get best action from learner
       let action = learner.bestAction(currentState);
+      console.log("best action", action);
       // If there's no best action, do something random
       if (
         action == undefined ||
@@ -1630,8 +1641,6 @@
       const nextState = mk.getGameState(this);
       // Get Reward
       const reward = mk.getReward(this);
-
-      console.log(reward);
 
       // add currentState, nextState, reward, action to learner
       learner.add(currentState, nextState, reward, action);
