@@ -122,6 +122,23 @@
     return STATE;
   };
 
+  // get reward
+  mk.getReward = (me) => {
+    // Distinguish me and opponent
+    const player =
+      me.getName() === mk.game.fighters[0].getName()
+        ? mk.game.fighters[0]
+        : mk.game.fighters[1];
+    const opponent =
+      player.getName() === mk.game.fighters[0].getName()
+        ? mk.game.fighters[1]
+        : mk.game.fighters[0];
+    // Reward Equation: player.getLife() - opponent.getLife();
+    const reward = player.getLife() - opponent.getLife();
+
+    return reward;
+  };
+
   mk.controllers.Base.prototype._initializeFighters = function (fighters) {
     var current;
 
@@ -1612,10 +1629,14 @@
       // Get the State of the Game after action applied
       const nextState = mk.getGameState(this);
       // Get Reward
+      const reward = mk.getReward(this);
+
+      console.log(reward);
 
       // add currentState, nextState, reward, action to learner
+      learner.add(currentState, nextState, reward, action);
 
-      // console.log({ currentState, nextState });
+      learner.learn(10);
     } else {
       // Do Sequential Action
 

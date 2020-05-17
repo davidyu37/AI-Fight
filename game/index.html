@@ -80,6 +80,13 @@
               "game-end": function () {
                 console.log("game ended");
                 mk.restart();
+                mk.game.fighters.forEach((fighter) => {
+                  if (fighter.getName() === "kano") {
+                    setLife($("player2Life"), fighter.getLife());
+                  } else {
+                    setLife($("player1Life"), fighter.getLife());
+                  }
+                });
               },
             },
             // isHost: /^yes$/i.test(prompt("Are you going to be host?")),
