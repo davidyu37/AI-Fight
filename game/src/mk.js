@@ -37,19 +37,19 @@
     });
   };
 
-  mk.reset = function () {
-    var game = this.game;
-    if (typeof game.reset === "function") game.reset();
-    game.fighters.forEach(function (f) {
-      f.getMove().stop();
-    });
-    game.fighters = null;
-    game._opponents = null;
-    game.arena.destroy();
-    game.arena = null;
-    game._callbacks = null;
-    this.game = null;
-  };
+  // mk.reset = function () {
+  //   var game = this.game;
+  //   if (typeof game.reset === "function") game.reset();
+  //   game.fighters.forEach(function (f) {
+  //     f.getMove().stop();
+  //   });
+  //   game.fighters = null;
+  //   game._opponents = null;
+  //   game.arena.destroy();
+  //   game.arena = null;
+  //   game._callbacks = null;
+  //   this.game = null;
+  // };
 
   mk.restart = function () {
     // Reset Player Position and Give Them Full Health
@@ -74,11 +74,60 @@
     }
   };
 
+  // Loop to run the iteration for training
+  mk.step = () => {
+    const player1 = mk.game.fighters[0];
+    const player2 = mk.game.fighters[1];
+    // console.log(player1.getName(), `has brain ${player1._hasBrain}`);
+    // console.log(player2.getName(), `has brain ${player2._hasBrain}`);
+    // console.log(player2);
+    // console.log(player2);
+
+    player1.act({
+      opponent: {
+        x: player2.getX(),
+        life: player2.getLife(),
+        action: player2._currentMove,
+      },
+    });
+
+    player2.act({
+      opponent: {
+        x: player1.getX(),
+        life: player1.getLife(),
+        action: player1._currentMove,
+      },
+    });
+  };
+
+  // Get the game state for QLearning
+  mk.getGameState = (me) => {
+    // Distinguish me and opponent
+    const player =
+      me.getName() === mk.game.fighters[0].getName()
+        ? mk.game.fighters[0]
+        : mk.game.fighters[1];
+    const opponent =
+      player.getName() === mk.game.fighters[0].getName()
+        ? mk.game.fighters[1]
+        : mk.game.fighters[0];
+
+    // STATE `S_${player.getLife()}_${player.getMove().type}_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`
+    const distance_to_opponent = player.getX() - opponent.getX();
+
+    const STATE = `S_${player.getLife()}_${
+      player.getMove().type
+    }_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`;
+    // console.log(STATE);
+    return STATE;
+  };
+
   mk.controllers.Base.prototype._initializeFighters = function (fighters) {
     var current;
 
     this.fighters = [];
     this._opponents = {};
+    this.status = "START";
 
     for (var i = 0; i < fighters.length; i += 1) {
       current = fighters[i];
@@ -215,6 +264,7 @@
       callback = this._callbacks[mk.callbacks.GAME_END];
     opponent.getMove().stop();
     opponent.setMove(mk.moves.types.WIN);
+
     if (typeof callback === "function") {
       callback.call(null, fighter);
     }
@@ -1464,12 +1514,13 @@
     this._height = 60;
     this._locked = false;
     this.opts = options;
+    this._hasBrain = options.hasBrain;
     this._position = {
       x: 50,
       y: mk.config.PLAYER_TOP,
     };
-    console.log("initialize fighter", options);
     this.learner = new QLearner(0.1, 0.9);
+    this.curiosity = 0.01;
     this.init();
   };
 
@@ -1536,6 +1587,70 @@
         }
       });
     }
+  };
+
+  mk.fighters.Fighter.prototype.act = function ({ opponent, game_status }) {
+    if (this._hasBrain) {
+      // Do Q Learning Stuff
+      console.log("thinker");
+      const learner = this.learner;
+      // Get Current State of the Game
+      const currentState = mk.getGameState(this);
+      // Use Current State to get best action from learner
+      let action = learner.bestAction(currentState);
+      // If there's no best action, do something random
+      if (
+        action == undefined ||
+        learner.getQValue(currentState, action) <= 0 ||
+        Math.random() < this.curiosity
+      ) {
+        action = this.randomAction();
+      }
+
+      // Execute the action
+      this.setMove(action);
+      // Get the State of the Game after action applied
+      const nextState = mk.getGameState(this);
+      // Get Reward
+
+      // add currentState, nextState, reward, action to learner
+
+      // console.log({ currentState, nextState });
+    } else {
+      // Do Sequential Action
+
+      const distToOpponent = this.getX() - opponent.x;
+      const absDist = Math.abs(distToOpponent);
+      if (absDist < 40) {
+        // Randomly punch
+        this.setMove(actions.HIGH_PUNCH);
+        // const rand = Math.random();
+        // if (rand < 0.5) {
+        //   this.setMove(actions.HIGH_PUNCH);
+        // } else {
+        //   this.setMove(actions.LOW_PUNCH);
+        // }
+      } else {
+        if (distToOpponent < 0) {
+          this.setMove(actions.WALK);
+        } else {
+          this.setMove(actions.WALK_BACKWARD);
+        }
+      }
+    }
+  };
+
+  mk.fighters.Fighter.prototype.randomAction = function () {
+    // Get a random action
+    const keys = Object.keys(actions);
+    const max = keys.length;
+    const min = 0;
+
+    const rand = Math.floor(Math.random() * (max - min) + min);
+
+    const theKey = keys[rand];
+
+    return actions[theKey];
   };
 
   mk.fighters.Fighter.prototype.isJumping = function () {
@@ -1736,6 +1851,7 @@
   };
 
   mk.fighters.Fighter.prototype.reset = function () {
+    this.setOrientation(this.opts.orientation);
     this.setLife(100);
     this.unlock();
     this.setMove(mk.moves.types.STAND);

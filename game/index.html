@@ -3,6 +3,7 @@
   <head>
     <title>mk.js</title>
     <script src="src/lib/seedrandom.js"></script>
+    <script src="src/actions.js"></script>
     <script src="src/lib/q-learning.js"></script>
     <script src="src/movement.js"></script>
     <script src="src/mk.js"></script>
@@ -58,6 +59,10 @@
             $("utils").style.visibility = "visible";
           };
 
+          let loop;
+
+          const stepTime = 500;
+
           var options = {
             arena: {
               container: document.getElementById("arena"),
@@ -85,6 +90,8 @@
           function startNewGame() {
             mk.start(options).ready(function () {
               startGame();
+
+              loop = setInterval(mk.step, stepTime);
             });
           }
 
