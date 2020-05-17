@@ -1512,8 +1512,8 @@
   mk.fighters = {};
 
   mk.fighters.list = {
-    subzero: true,
-    kano: true,
+    captainamerica: true,
+    ironman: true,
   };
 
   mk.fighters.orientations = {

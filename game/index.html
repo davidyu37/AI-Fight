@@ -27,11 +27,11 @@
       </div>
       <div id="parent">
         <div id="utils">
-          <div id="player1Name" class="playerName">Sub-Zero</div>
+          <div id="player1Name" class="playerName">Captain America</div>
           <div id="player1LifeBar" class="lifebar">
             <div class="life" id="player1Life"></div>
           </div>
-          <div id="player2Name" class="playerName">Kano</div>
+          <div id="player2Name" class="playerName">Ironman</div>
           <div id="player2LifeBar" class="lifebar">
             <div class="life" id="player2Life"></div>
           </div>
@@ -75,10 +75,10 @@
               container: document.getElementById("arena"),
               arena: mk.arenas.types.THRONE_ROOM,
             },
-            fighters: [{ name: "Subzero" }, { name: "Kano" }],
+            fighters: [{ name: "captainamerica" }, { name: "ironman" }],
             callbacks: {
               attack: function (f, o, l) {
-                if (o.getName() === "kano") {
+                if (o.getName() === "ironman") {
                   setLife($("player2Life"), o.getLife());
                 } else {
                   setLife($("player1Life"), o.getLife());
@@ -88,7 +88,7 @@
                 console.log("game ended");
                 mk.restart();
                 mk.game.fighters.forEach((fighter) => {
-                  if (fighter.getName() === "kano") {
+                  if (fighter.getName() === "ironman") {
                     setLife($("player2Life"), fighter.getLife());
                     $("player2Win").innerText = fighter._win;
                   } else {
