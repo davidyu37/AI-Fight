@@ -98,6 +98,14 @@
         action: player1._currentMove,
       },
     });
+
+    // Set prev to life now
+    player1.setPrevLife(player1.getLife());
+    player2.setPrevLife(player2.getLife());
+
+    console.log(
+      "step ends -------------------------------------------------------"
+    );
   };
 
   // Get the game state for QLearning
@@ -115,17 +123,20 @@
     // STATE `S_${player.getLife()}_${player.getMove().type}_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`
     const distance_to_opponent = player.getX() - opponent.getX();
 
-    let STATE = `S_${player.getLife()}_${
-      player.getMove().type
-    }_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`;
+    let STATE = `${
+      opponent.getMove().type
+    }_${player.getX()}_${opponent.getX()}`;
+    // let STATE = `S_${player.getLife()}_${
+    //   player.getMove().type
+    // }_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`;
 
-    if (prev) {
-      STATE = `S_${player.getPrevLife()}_${
-        player.getMove().type
-      }_${opponent.getPrevLife()}_${
-        opponent.getMove().type
-      }_${distance_to_opponent}`;
-    }
+    // if (prev) {
+    //   STATE = `S_${player.getPrevLife()}_${
+    //     player.getMove().type
+    //   }_${opponent.getPrevLife()}_${
+    //     opponent.getMove().type
+    //   }_${distance_to_opponent}`;
+    // }
     return STATE;
   };
 
@@ -227,6 +238,7 @@
       this._attackCompatible(fighter.getMove().type, opponent.getMove().type)
     ) {
       opponent.endureAttack(damage, fighter.getMove().type);
+
       if (typeof callback === "function") {
         callback.call(
           null,
@@ -1548,13 +1560,14 @@
     this._locked = false;
     this._win = 0;
     this._loss = 0;
+    this._reward = 0;
     this.opts = options;
     this._hasBrain = options.hasBrain;
     this._position = {
       x: 50,
       y: mk.config.PLAYER_TOP,
     };
-    this.learner = new QLearner(0.1, 0.9);
+    this.learner = new QLearner(0.5, 0.9);
     this.curiosity = 0.01;
     this.init();
   };
@@ -1635,11 +1648,9 @@
       const learner = this.learner;
       // Get Current State of the Game
       const currentState = mk.getGameState(this, true);
-      const diffBeforeAction = mk.getLifeDiff(this, true);
 
       // Use Current State to get best action from learner
       let action = learner.bestAction(currentState);
-      console.log("best action", action);
       // If there's no best action, do something random
       if (
         action == undefined ||
@@ -1650,19 +1661,21 @@
       }
 
       // Execute the action
+      console.log(this.getName(), action);
       this.setMove(action);
       // Get the State of the Game after action applied
       const nextState = mk.getGameState(this);
       // Get Reward
-      const diffAfterAction = mk.getLifeDiff(this);
-      const reward = diffAfterAction - diffBeforeAction;
+      // const reward = rewards[action];
+      const reward = this.getReward(action, this);
 
-      console.log(reward);
-
+      console.log({ reward });
       // add currentState, nextState, reward, action to learner
       learner.add(currentState, nextState, reward, action);
 
-      learner.learn(10);
+      console.log(learner);
+
+      learner.learn(1000);
     } else {
       // Do Sequential Action
 
@@ -1670,6 +1683,7 @@
       const absDist = Math.abs(distToOpponent);
       if (absDist < 40) {
         // Randomly punch
+        console.log(this.getName(), actions.HIGH_PUNCH);
         this.setMove(actions.HIGH_PUNCH);
         // const rand = Math.random();
         // if (rand < 0.5) {
@@ -1679,8 +1693,10 @@
         // }
       } else {
         if (distToOpponent < 0) {
+          console.log(this.getName(), actions.WALK);
           this.setMove(actions.WALK);
         } else {
+          console.log(this.getName(), actions.WALK_BACKWARD);
           this.setMove(actions.WALK_BACKWARD);
         }
       }
@@ -1859,6 +1875,31 @@
     return this._prevLife;
   };
 
+  mk.fighters.Fighter.prototype.setReward = function (reward) {
+    this._reward = reward;
+  };
+
+  mk.fighters.Fighter.prototype.getReward = function (action, me) {
+    const player =
+      me.getName() === mk.game.fighters[0].getName()
+        ? mk.game.fighters[0]
+        : mk.game.fighters[1];
+    const opponent =
+      player.getName() === mk.game.fighters[0].getName()
+        ? mk.game.fighters[1]
+        : mk.game.fighters[0];
+    console.log("GET DAMAGE");
+    const damageOnSelf = player.getPrevLife() - player.getLife();
+    const damageOnOther = opponent.getPrevLife() - opponent.getLife();
+    console.log(damageOnOther, damageOnSelf);
+    const actionPoints = rewards[action] || 0;
+
+    console.log(actionPoints);
+
+    const damage = damageOnOther - damageOnSelf + actionPoints;
+    return damage || 0;
+  };
+
   mk.fighters.Fighter.prototype.getBottom = function () {
     var bottomY = this._currentState.height + this.getY();
     return this._arena.height - bottomY;
@@ -1909,6 +1950,7 @@
   mk.fighters.Fighter.prototype.reset = function () {
     this.setOrientation(this.opts.orientation);
     this.setLife(100);
+    this.setPrevLife(100);
     this.unlock();
     this.setMove(mk.moves.types.STAND);
   };
