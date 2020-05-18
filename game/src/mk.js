@@ -101,7 +101,7 @@
   };
 
   // Get the game state for QLearning
-  mk.getGameState = (me) => {
+  mk.getGameState = (me, prev) => {
     // Distinguish me and opponent
     const player =
       me.getName() === mk.game.fighters[0].getName()
@@ -115,15 +115,22 @@
     // STATE `S_${player.getLife()}_${player.getMove().type}_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`
     const distance_to_opponent = player.getX() - opponent.getX();
 
-    const STATE = `S_${player.getLife()}_${
+    let STATE = `S_${player.getLife()}_${
       player.getMove().type
     }_${opponent.getLife()}_${opponent.getMove().type}_${distance_to_opponent}`;
-    // console.log(STATE);
+
+    if (prev) {
+      STATE = `S_${player.getPrevLife()}_${
+        player.getMove().type
+      }_${opponent.getPrevLife()}_${
+        opponent.getMove().type
+      }_${distance_to_opponent}`;
+    }
     return STATE;
   };
 
-  // get reward
-  mk.getReward = (me) => {
+  // get life difference
+  mk.getLifeDiff = (me, prev) => {
     // Distinguish me and opponent
     const player =
       me.getName() === mk.game.fighters[0].getName()
@@ -133,10 +140,14 @@
       player.getName() === mk.game.fighters[0].getName()
         ? mk.game.fighters[1]
         : mk.game.fighters[0];
-    // Reward Equation: player.getLife() - opponent.getLife();
-    const reward = player.getLife() - opponent.getLife();
 
-    return reward;
+    let diff = player._life;
+
+    if (prev) {
+      diff = player._prevLife;
+    }
+
+    return diff;
   };
 
   mk.controllers.Base.prototype._initializeFighters = function (fighters) {
@@ -1529,6 +1540,7 @@
     this._name = name;
     this._arena = options.arena;
     this._game = options.game;
+    this._prevLife = 100;
     this._life = 100;
     this._orientation = options.orientation;
     this._width = 30;
@@ -1622,7 +1634,9 @@
       // Do Q Learning Stuff
       const learner = this.learner;
       // Get Current State of the Game
-      const currentState = mk.getGameState(this);
+      const currentState = mk.getGameState(this, true);
+      const diffBeforeAction = mk.getLifeDiff(this, true);
+
       // Use Current State to get best action from learner
       let action = learner.bestAction(currentState);
       console.log("best action", action);
@@ -1640,7 +1654,10 @@
       // Get the State of the Game after action applied
       const nextState = mk.getGameState(this);
       // Get Reward
-      const reward = mk.getReward(this);
+      const diffAfterAction = mk.getLifeDiff(this);
+      const reward = diffAfterAction - diffBeforeAction;
+
+      console.log(reward);
 
       // add currentState, nextState, reward, action to learner
       learner.add(currentState, nextState, reward, action);
@@ -1816,6 +1833,7 @@
         }
       }
     }
+    this.setPrevLife(this.getLife());
     this.setLife(this.getLife() - damage);
     if (this.getLife() === 0) {
       this._game.fighterDead(this);
@@ -1829,8 +1847,16 @@
     this._life = Math.max(life, 0);
   };
 
+  mk.fighters.Fighter.prototype.setPrevLife = function (life) {
+    this._prevLife = Math.max(life, 0);
+  };
+
   mk.fighters.Fighter.prototype.getLife = function () {
     return this._life;
+  };
+
+  mk.fighters.Fighter.prototype.getPrevLife = function () {
+    return this._prevLife;
   };
 
   mk.fighters.Fighter.prototype.getBottom = function () {
