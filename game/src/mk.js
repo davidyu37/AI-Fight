@@ -1567,7 +1567,7 @@
       x: 50,
       y: mk.config.PLAYER_TOP,
     };
-    this.learner = new QLearner(0.5, 0.9);
+    this.learner = new QLearner(0.1, 0.9);
     this.curiosity = 0.01;
     this.init();
   };
@@ -1683,14 +1683,16 @@
       const absDist = Math.abs(distToOpponent);
       if (absDist < 40) {
         // Randomly punch
-        console.log(this.getName(), actions.HIGH_PUNCH);
-        this.setMove(actions.HIGH_PUNCH);
-        // const rand = Math.random();
-        // if (rand < 0.5) {
-        //   this.setMove(actions.HIGH_PUNCH);
-        // } else {
-        //   this.setMove(actions.LOW_PUNCH);
-        // }
+        // this.setMove(actions.HIGH_PUNCH);
+        let action = actions.HIGH_PUNCH;
+        const rand = Math.random();
+        if (rand < 0.5) {
+          this.setMove(action);
+        } else {
+          action = actions.STAND;
+          this.setMove(action);
+        }
+        console.log(this.getName(), action);
       } else {
         if (distToOpponent < 0) {
           console.log(this.getName(), actions.WALK);
